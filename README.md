@@ -1,5 +1,5 @@
 ### EX5 Information Retrieval Using Boolean Model in Python
-### DATE: 
+### DATE: 15/04/2025
 ### AIM: To implement Information Retrieval Using Boolean Model in Python.
 ### Description:
 <div align = "justify">
@@ -22,18 +22,21 @@ The Boolean model in Information Retrieval (IR) is a fundamental model used for 
     <p>c) For each term in the query, it retrieves documents containing that term and performs Boolean operations (AND, OR, NOT) based on the query's structure.
 
 ### Program:
+```
+import numpy as np
+import pandas as pd
+import re
 
-    import numpy as np
-    import pandas as pd
-    class BooleanRetrieval:
-        def __init__(self):
-            self.index = {}
-            self.documents_matrix = None
+class BooleanRetrieval:
+    def __init__(self):
+        self.index = {}
+        self.documents_matrix = None
+        self.documents = {}
 
     def index_document(self, doc_id, text):
         terms = text.lower().split()
         print("Document -", doc_id, terms)
-
+        self.documents[doc_id] = text
         for term in terms:
             if term not in self.index:
                 self.index[term] = set()
@@ -55,6 +58,7 @@ The Boolean model in Information Retrieval (IR) is a fundamental model used for 
 
     def print_documents_matrix_table(self):
         df = pd.DataFrame(self.documents_matrix, columns=self.index.keys())
+        print("\nDocuments-Term Matrix:")
         print(df)
 
     def print_all_terms(self):
@@ -62,11 +66,44 @@ The Boolean model in Information Retrieval (IR) is a fundamental model used for 
         print(list(self.index.keys()))
 
     def boolean_search(self, query):
-        # TYPE YOUR CODE HERE
+        query = query.lower()
+        terms = re.findall(r'\w+|and|or|not', query)
 
+        def get_docs(term):
+            return self.index.get(term, set())
+
+        result_stack = []
+        operator_stack = []
+
+        i = 0
+        while i < len(terms):
+            token = terms[i]
+            if token == "not":
+                i += 1
+                term = terms[i]
+                result_stack.append(set(self.documents.keys()) - get_docs(term))
+            elif token in {"and", "or"}:
+                operator_stack.append(token)
+            else:
+                result_stack.append(get_docs(token))
+
+            if len(result_stack) >= 2 and operator_stack:
+                right = result_stack.pop()
+                left = result_stack.pop()
+                op = operator_stack.pop()
+                if op == "and":
+                    result_stack.append(left & right)
+                elif op == "or":
+                    result_stack.append(left | right)
+
+            i += 1
+
+        return result_stack[0] if result_stack else set()
+```
+# Main Program
 if __name__ == "__main__":
     indexer = BooleanRetrieval()
-
+```
     documents = {
         1: "Python is a programming language",
         2: "Information retrieval deals with finding information",
@@ -80,14 +117,24 @@ if __name__ == "__main__":
     indexer.print_documents_matrix_table()
     indexer.print_all_terms()
 
-    query = input("Enter your boolean query: ")
+    query = input("\nEnter your boolean query (use AND, OR, NOT): ")
     results = indexer.boolean_search(query)
-    if results:
-        print(f"Results for '{query}': {results}")
-    else:
-        print("No results found for the query.")
 
+    if results:
+        print(f"\nResults for '{query}': Document IDs {results}")
+        for doc_id in results:
+            print(f"Doc {doc_id}: {documents[doc_id]}")
+    else:
+        print("\nNo results found for the query.")
+```
 
 ### Output:
 
+![Screenshot 2025-04-15 152344](https://github.com/user-attachments/assets/43180eda-0ceb-43e9-8e62-3608eef2c060)
+
+![Screenshot 2025-04-15 152439](https://github.com/user-attachments/assets/a76bd526-1df0-42c3-9233-9e938f1c321b)
+
+![Screenshot 2025-04-15 152718](https://github.com/user-attachments/assets/ecd06ecb-f603-4d8a-b499-f29678caf3c3)
+
 ### Result:
+The program successfully retrieves relevant documents based on Boolean queries like AND, OR, and NOT using an inverted index.
